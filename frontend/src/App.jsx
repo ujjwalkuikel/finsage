@@ -48,17 +48,17 @@ export default function App() {
   const money = (n) => n == null ? '—' : (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2)
 
   return (
-    <div className="flex bg-[#f6f7fb] min-h-screen text-slate-800">
+    <div className="flex bg-[#fafafa] min-h-screen text-neutral-800 antialiased">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 flex flex-col">
         {/* Header */}
-        <header className="flex items-center justify-between px-8 py-5 border-b border-[#eceef4] bg-white">
+        <header className="flex items-center justify-between px-8 py-5 border-b border-neutral-200 bg-white">
           <div>
-            <h1 className="text-lg font-bold tracking-tight text-gray-900 capitalize">
+            <h1 className="text-xl font-bold tracking-tight text-neutral-900 capitalize">
               {activeTab === 'dashboard' ? 'Overview' : activeTab === 'strategies' ? 'Strategies Comparison' : 'Trades Ledger'}
             </h1>
-            <p className="text-xs text-gray-400 font-mono mt-0.5">
+            <p className="text-xs text-neutral-400 font-mono mt-1 uppercase tracking-wider font-semibold">
               {activeTab === 'dashboard' 
                 ? 'Consolidated simulated account performance metrics' 
                 : activeTab === 'strategies' 
@@ -69,16 +69,16 @@ export default function App() {
           <button 
             onClick={onRun} 
             disabled={busy}
-            className="text-xs font-semibold bg-[#0b1020] text-white px-4 py-2.5 rounded-xl hover:bg-slate-800 disabled:opacity-50 transition shadow-sm"
+            className="text-xs font-bold bg-neutral-950 text-white hover:bg-neutral-800 active:bg-black px-5 py-3 rounded-xl disabled:opacity-50 transition shadow-sm uppercase tracking-wider"
           >
             {busy ? 'Running Simulation…' : 'Run Simulation'}
           </button>
         </header>
 
         {/* Tab Views */}
-        <section className="px-8 py-6 space-y-6">
+        <section className="px-8 py-6 space-y-6 flex-1">
           
-          {/* Global statistics row (always visible on Dashboard, hidden on detail tabs to focus content) */}
+          {/* Global statistics row */}
           {activeTab === 'dashboard' && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard label="Total P&L" value={stats ? money(stats.total_pnl) : '—'}
@@ -95,19 +95,18 @@ export default function App() {
           {/* Tab Render Switch */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
-              {/* Overview shows strategies list first as the core hunter portfolio */}
               <StrategiesTable 
                 strategies={strategies} 
                 onValidate={(name) => setSelectedStrategy(name)} 
               />
               
-              <div className="border-t border-gray-100 pt-6">
+              <div className="border-t border-neutral-200 pt-6">
                 <TradesTable trades={trades.slice(0, 10)} />
                 {trades.length > 10 && (
                   <div className="mt-3 text-center">
                     <button 
                       onClick={() => setActiveTab('trades')}
-                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 font-mono"
+                      className="text-xs font-bold text-neutral-900 hover:text-neutral-600 font-mono uppercase tracking-wider"
                     >
                       View all {trades.length} trades →
                     </button>
