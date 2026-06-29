@@ -86,17 +86,17 @@ you always know what's going on. This is the single place to track progress.
 ## Phase 3 — Real data + React dashboard
 
 ### Data adapters (`app/data/`)
-- [ ] **T3.1** — `PolygonFeed`: fetch daily bars for one symbol (1 call).
+- [x] **T3.1** — `PolygonFeed`: fetch daily bars for one symbol (1 call).
   *Done when:* real NVDA daily bars flow into the engine.
-- [ ] **T3.2** — CSV cache layer (save/load pulled bars). *Done when:* a second
+- [x] **T3.2** — CSV cache layer (save/load pulled bars). *Done when:* a second
   run reads from disk, no re-fetch.
-- [ ] **T3.3** — `PolygonFeed` minute bars with `next_url` pagination + rate-limit
+- [x] **T3.3** — `PolygonFeed` minute bars with `next_url` pagination + rate-limit
   sleep. *Done when:* 2yr of minute bars for one symbol pulls cleanly.
-- [ ] **T3.4** — Session-boundary support in the feed (so ORB/VWAP know the open).
+- [x] **T3.4** — Session-boundary support in the feed (so ORB/VWAP know the open).
   *Done when:* VWAP (T2.13) can be enabled.
-- [ ] **T3.5** — `AlpacaFeed` (free live stream) OR `TradierFeed` (consolidated).
+- [x] **T3.5** — `AlpacaFeed` (free live stream) OR `TradierFeed` (consolidated).
   *Done when:* live bars stream into the engine for a watchlist.
-- [ ] **T3.6** — Universe module: a fixed diverse watchlist + a stub
+- [x] **T3.6** — Universe module: a fixed diverse watchlist + a stub
   `build_daily_universe()`. *Done when:* the engine loops over the watchlist.
 
 ### Frontend (`frontend/`)
