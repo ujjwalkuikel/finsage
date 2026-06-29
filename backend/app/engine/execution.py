@@ -12,11 +12,12 @@ from .strategy import Signal, Bar
 
 
 class SimExecution:
-    def __init__(self, account_size=1000.0, risk_pct=0.01, slippage_bps=5.0):
+    def __init__(self, account_size=1000.0, risk_pct=0.01, slippage_bps=5.0, ledger=None):
         self.account = account_size
         self.risk_pct = risk_pct          # 1% risk per trade by default
         self.slippage_bps = slippage_bps  # assumed slippage, in basis points
         self.open_positions = {}          # symbol -> dict
+        self.ledger = ledger or db
 
     def _slip(self, price, side, entering):
         """Pessimistic slippage: you pay up entering, get less exiting."""
@@ -40,7 +41,7 @@ class SimExecution:
         if qty <= 0:
             return
 
-        trade_id = db.insert_open_trade({
+        trade_id = self.ledger.insert_open_trade({
             "strategy": strategy_name, "symbol": symbol, "side": sig.side,
             "qty": qty, "entry_time": bar.time, "entry_price": round(fill, 4),
             "stop_price": round(sig.stop, 4), "target_price": round(sig.target, 4),
@@ -73,8 +74,8 @@ class SimExecution:
             pnl = (pos["entry"] - fill) * pos["qty"]
         pnl_r = pnl / (pos["risk"] * pos["qty"]) if pos["risk"] else 0.0
         self.account += pnl
-        db.close_trade(pos["id"], bar.time, round(fill, 4),
-                       round(pnl, 2), round(pnl_r, 3), reason)
+        self.ledger.close_trade(pos["id"], bar.time, round(fill, 4),
+                                round(pnl, 2), round(pnl_r, 3), reason)
 
     def close_all(self, symbol, bar):
         if symbol in self.open_positions:

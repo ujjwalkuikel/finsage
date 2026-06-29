@@ -51,22 +51,22 @@ you always know what's going on. This is the single place to track progress.
 ## Phase 2 — Validation gauntlet + strategies
 
 ### Validation (`app/validation/`)
-- [ ] **T2.1** — Backtest result object: a function that runs a strategy over a
+- [x] **T2.1** — Backtest result object: a function that runs a strategy over a
   bar list and returns trades + metrics (expectancy R, profit factor, max DD,
   win rate, # trades). *Done when:* metrics match the dashboard's numbers.
-- [ ] **T2.2** — In-sample report + overfit smell-test helper. *Done when:* it
+- [x] **T2.2** — In-sample report + overfit smell-test helper. *Done when:* it
   flags a strategy with suspiciously high win rate / too many params.
-- [ ] **T2.3** — Bar-permutation utility (block bootstrap, preserves volatility).
+- [x] **T2.3** — Bar-permutation utility (block bootstrap, preserves volatility).
   *Done when:* a unit test shows permuted series keep similar volatility.
-- [ ] **T2.4** — Monte Carlo permutation test (re-run on N permutations, return
+- [x] **T2.4** — Monte Carlo permutation test (re-run on N permutations, return
   p-value). *Done when:* returns a p-value for a given strategy + data.
-- [ ] **T2.5** — Walk-forward runner (train window → test window, roll forward).
+- [x] **T2.5** — Walk-forward runner (train window → test window, roll forward).
   *Done when:* returns out-of-sample equity for a strategy.
-- [ ] **T2.6** — Walk-forward permutation test (p-value on OOS data). *Done when:*
+- [x] **T2.6** — Walk-forward permutation test (p-value on OOS data). *Done when:*
   returns a p-value for the walk-forward result.
-- [ ] **T2.7** — Cross-sectional runner (same strategy across many CSVs, report
+- [x] **T2.7** — Cross-sectional runner (same strategy across many CSVs, report
   the per-ticker distribution). *Done when:* prints a distribution table.
-- [ ] **T2.8** — `validate(strategy, data)` that chains all four steps + a verdict
+- [x] **T2.8** — `validate(strategy, data)` that chains all four steps + a verdict
   (pass/fail). *Done when:* one call gives a full report.
 
 ### Strategies (`app/engine/strategies/` — one file each)
