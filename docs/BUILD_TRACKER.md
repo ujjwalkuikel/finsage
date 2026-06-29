@@ -23,16 +23,16 @@ you always know what's going on. This is the single place to track progress.
 
 ## Phase 0 — Repo hygiene (do first, ~half a day)
 
-- [ ] **T0.1** — `git init`, add a `.gitignore` (ignore `trades.db`, `__pycache__`,
+- [x] **T0.1** — `git init`, add a `.gitignore` (ignore `trades.db`, `__pycache__`,
   `node_modules`, `.env`). *Done when:* `git status` is clean except source files.
-- [ ] **T0.2** — Add `.env.example` listing every key from `core/config.py`
+- [x] **T0.2** — Add `.env.example` listing every key from `core/config.py`
   (POLYGON_API_KEY, TRADIER_TOKEN, …) with blank values. *Done when:* a newcomer
   knows exactly which secrets to set.
-- [ ] **T0.3** — Set up `pytest` + a trivial `tests/test_smoke.py` that imports
+- [x] **T0.3** — Set up `pytest` + a trivial `tests/test_smoke.py` that imports
   the engine and asserts a sim produces ≥1 trade. *Done when:* `pytest` passes.
-- [ ] **T0.4** — Add a `Makefile` (or `justfile`) with `sim`, `serve`, `test`,
+- [x] **T0.4** — Add a `Makefile` (or `justfile`) with `sim`, `serve`, `test`,
   `web` targets. *Done when:* `make sim` runs the simulation.
-- [ ] **T0.5** — First commit: the scaffold as-is. *Done when:* clean history starts.
+- [x] **T0.5** — First commit: the scaffold as-is. *Done when:* clean history starts.
 
 ---
 
