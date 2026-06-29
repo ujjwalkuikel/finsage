@@ -44,6 +44,12 @@ class Strategy:
     def on_bar(self, bars: list[Bar]) -> Signal | None:
         raise NotImplementedError
 
+    def should_exit(self, bars: list[Bar], position: dict) -> bool:
+        """
+        Check if an open position should be closed based on custom strategy exit rules.
+        """
+        return False
+
 
 class RaynerTeoPullback(Strategy):
     """

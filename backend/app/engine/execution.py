@@ -49,6 +49,7 @@ class SimExecution:
         self.open_positions[symbol] = {
             "id": trade_id, "side": sig.side, "qty": qty, "entry": fill,
             "stop": sig.stop, "target": sig.target, "risk": per_share_risk,
+            "strategy": strategy_name,
         }
 
     def mark(self, symbol, bar: Bar):

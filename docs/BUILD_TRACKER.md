@@ -72,13 +72,13 @@ you always know what's going on. This is the single place to track progress.
 ### Strategies (`app/engine/strategies/` — one file each)
 - [x] **T2.9** — ORB (opening range breakout). *Done when:* it backtests and the
   trade logic matches the spec in docs/05.
-- [ ] **T2.10** — PDH/PDL breakout + failed-break reversal.
-- [ ] **T2.11** — Donchian / Turtle breakout (ATR sizing).
-- [ ] **T2.12** — RSI(2) Connors mean reversion.
-- [ ] **T2.13** — VWAP (needs session-start handling — see T3.x). *Note:* defer
+- [x] **T2.10** — PDH/PDL breakout + failed-break reversal.
+- [x] **T2.11** — Donchian / Turtle breakout (ATR sizing).
+- [x] **T2.12** — RSI(2) Connors mean reversion.
+- [x] **T2.13** — VWAP (needs session-start handling — see T3.x). *Note:* defer
   until the feed provides intraday session boundaries.
-- [ ] **T2.14** — Gap-fade (with a placeholder catalyst filter flag).
-- [ ] **T2.15** — Register all strategies; dashboard shows per-strategy stats.
+- [x] **T2.14** — Gap-fade (with a placeholder catalyst filter flag).
+- [x] **T2.15** — Register all strategies; dashboard shows per-strategy stats.
   *Done when:* multiple strategies appear side by side in the table.
 
 ---

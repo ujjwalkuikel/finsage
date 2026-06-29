@@ -36,6 +36,11 @@ def run(symbols: list[str], feed: Feed, execution: SimExecution,
             if len(history) < warmup:
                 continue
             if execution.has_position(symbol):
+                pos = execution.open_positions[symbol]
+                # Find matching strategy by name to execute custom exit rules
+                strat = next((s for s in strategies if s.name == pos["strategy"]), None)
+                if strat and strat.should_exit(history, pos):
+                    execution._close(symbol, bar, bar.close, "signal")
                 continue
             for strat in strategies:
                 sig = strat.on_bar(history)
