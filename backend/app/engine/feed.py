@@ -46,3 +46,54 @@ class MockFeed(Feed):
                       high=round(high, 3), low=round(low, 3),
                       close=round(close, 3), volume=vol)
             price = close
+
+
+class MockIntradayFeed(Feed):
+    """
+    Synthetic 5-minute intraday bars starting at 09:30 and ending at 16:00.
+    """
+    def __init__(self, n_days=5, start_price=100.0, seed=42):
+        self.n_days = n_days
+        self.start_price = start_price
+        self.seed = seed
+
+    def bars(self, symbol: str):
+        rng = random.Random(f"{self.seed}-{symbol}")
+        price = self.start_price
+        start_date = dt.date(2024, 1, 1)
+
+        day_count = 0
+        current_date = start_date
+
+        while day_count < self.n_days:
+            # Skip weekends (5=Saturday, 6=Sunday)
+            if current_date.weekday() >= 5:
+                current_date += dt.timedelta(days=1)
+                continue
+
+            session_time = dt.datetime.combine(current_date, dt.time(9, 30))
+            session_end = dt.datetime.combine(current_date, dt.time(16, 0))
+
+            # Drift is small per 5-min bar
+            day_drift = rng.uniform(-0.0001, 0.0001)
+
+            while session_time <= session_end:
+                shock = rng.gauss(day_drift, 0.0015)
+                open_ = price
+                close = max(0.5, price * (1 + shock))
+                high = max(open_, close) * (1 + abs(rng.gauss(0, 0.0005)))
+                low = min(open_, close) * (1 - abs(rng.gauss(0, 0.0005)))
+                vol = rng.randint(1000, 20000)
+
+                yield Bar(time=session_time.isoformat(),
+                          open=round(open_, 3),
+                          high=round(high, 3),
+                          low=round(low, 3),
+                          close=round(close, 3),
+                          volume=vol)
+
+                price = close
+                session_time += dt.timedelta(minutes=5)
+
+            current_date += dt.timedelta(days=1)
+            day_count += 1

@@ -70,7 +70,7 @@ you always know what's going on. This is the single place to track progress.
   (pass/fail). *Done when:* one call gives a full report.
 
 ### Strategies (`app/engine/strategies/` — one file each)
-- [ ] **T2.9** — ORB (opening range breakout). *Done when:* it backtests and the
+- [x] **T2.9** — ORB (opening range breakout). *Done when:* it backtests and the
   trade logic matches the spec in docs/05.
 - [ ] **T2.10** — PDH/PDL breakout + failed-break reversal.
 - [ ] **T2.11** — Donchian / Turtle breakout (ATR sizing).
