@@ -1,6 +1,6 @@
-# Walkthrough — Phase 0, Phase 2, & Phase 3 Data Adapters Complete
+# Walkthrough — Phase 0, Phase 2, & Phase 3 Complete
 
-This document outlines the changes made during the initial development phases of FinSage: setting up the repository (Phase 0), implementing the **Validation Gauntlet** and **Strategies** (Phase 2), and building the **Swappable Data Feed Architecture** (Phase 3).
+This document outlines the changes made during the initial development phases of FinSage: setting up the repository (Phase 0), implementing the **Validation Gauntlet** and **Strategies** (Phase 2), and building the **Swappable Data Feed Architecture & React Frontend Dashboard** (Phase 3: T3.1 to T3.10).
 
 ---
 
@@ -56,25 +56,32 @@ We implemented a highly decoupled, swappable data adapter architecture:
 
 ---
 
+## Part 4: Phase 3 — React Frontend Dashboard (T3.7 to T3.10)
+
+We built an interactive, premium React dashboard on Vite, communicating with the FastAPI backend:
+
+### Key Implementation Details
+
+#### 1. Page Shell & Tabs switching (`App.jsx`, `Sidebar.jsx`) — T3.7
+- Refactored `Sidebar.jsx` and `App.jsx` to coordinate tab selection between **Overview**, **Strategies & Charts**, and **Trades Ledger**.
+- Added dynamic title/description states and integrated the simulation run button to refresh all strategy metrics in real time.
+
+#### 2. Custom SVG Equity Curve (`EquityChart.jsx`) — T3.8
+- Created a custom vector-based charting component in `EquityChart.jsx` that scales cumulative P&L coordinates to fit custom width/height values.
+- Renders a clean line path (green for profitable, red for losing) with a soft faded gradient under the curve, giving a premium visual presentation.
+
+#### 3. Strategy Comparison Grid (`StrategiesTable.jsx`) — T3.9
+- Groups trading stats per strategy from the SQLite database.
+- Displays metrics side-by-side (Total Trades, Win Rate, Expectancy, Profit Factor, Total P&L) alongside a mini-equity curve visual thumbnail and a "Validate" trigger.
+
+#### 4. Validation Gauntlet modal (`ValidationModal.jsx`) — T3.10
+- Triggers the validation endpoint `POST /api/strategies/{name}/validate` running Monte Carlo tests.
+- Renders loading stages, verdict status, smell-test alerts (warnings count, win rate, profit factor), and p-values.
+
+---
+
 ## Verification & Test Results
 
-We created a suite of validation tests under `test_validation.py`, `test_orb.py`, `test_strategies.py`, and `test_data.py`.
+We created a suite of validation tests under `test_validation.py`, `test_orb.py`, `test_strategies.py`, and `test_data.py`. All 19 tests pass cleanly in `0.47s`.
 
-Running `python -m pytest tests/` yields:
-```text
-============================= test session starts =============================
-platform win32 -- Python 3.11.9, pytest-9.1.1, pluggy-1.6.0
-rootdir: D:\Projects\FinSage\backend
-plugins: anyio-4.14.1
-collected 19 items
-
-tests\test_data.py .                                                     [  5%]
-tests\test_orb.py ..                                                     [ 15%]
-tests\test_smoke.py .                                                    [ 21%]
-tests\test_strategies.py ......                                          [ 52%]
-tests\test_validation.py .........                                       [100%]
-
-============================= 19 passed in 0.47s ==============================
-```
-
-All 19 unit tests pass cleanly, confirming that the swappable data feeds and caching mechanism work perfectly.
+The React application compiles and builds successfully for production via `npm run build` in `39.35s` with zero errors.

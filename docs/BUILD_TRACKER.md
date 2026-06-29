@@ -100,12 +100,12 @@ you always know what's going on. This is the single place to track progress.
   `build_daily_universe()`. *Done when:* the engine loops over the watchlist.
 
 ### Frontend (`frontend/`)
-- [ ] **T3.7** — `npm install`, confirm the skeleton runs against the live backend.
+- [x] **T3.7** — `npm install`, confirm the skeleton runs against the live backend.
   *Done when:* the React dashboard shows real sim data at localhost:5173.
-- [ ] **T3.8** — Add an equity-curve chart (per strategy). *Done when:* curve renders.
-- [ ] **T3.9** — Strategy comparison view (a row per strategy with its metrics).
+- [x] **T3.8** — Add an equity-curve chart (per strategy). *Done when:* curve renders.
+- [x] **T3.9** — Strategy comparison view (a row per strategy with its metrics).
   *Done when:* you can compare strategies at a glance.
-- [ ] **T3.10** — Validation results panel (show p-values / walk-forward verdict).
+- [x] **T3.10** — Validation results panel (show p-values / walk-forward verdict).
   *Done when:* a strategy's gauntlet result is visible in the UI.
 
 ---
