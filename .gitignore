@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+.venv/
+
+# Databases
+*.db
+backend/trades.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+.eslintcache
+
+# Environment
+.env
+
+# IDEs/Editors
+.idea/
+.vscode/
+*.swp
+*.swo

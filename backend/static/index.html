@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ledger — Strategy Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          ink: '#0b1020', slate2: '#141a2e', edge: '#1f2740',
+          mute: '#8a93ad', brand: '#6366f1',
+          up: '#16a34a', down: '#dc2626',
+        }
+      }
+    }
+  }
+</script>
+<style>
+  /* signature: numbers live in a monospace, like a ticker tape / ledger */
+  .num { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  body { background: #f6f7fb; }
+  .card { background:#fff; border:1px solid #eceef4; border-radius:14px; }
+  .navlink { color:#aab2c8; }
+  .navlink.active { color:#fff; background:#1b233c; }
+</style>
+</head>
+<body class="font-sans text-ink">
+<div class="flex min-h-screen">
+
+  <!-- Sidebar -->
+  <aside class="w-60 shrink-0 bg-ink text-white flex flex-col">
+    <div class="px-6 py-5 flex items-center gap-2 border-b border-edge">
+      <div class="h-7 w-7 rounded-lg bg-brand flex items-center justify-center font-bold">L</div>
+      <span class="font-semibold tracking-tight">Ledger</span>
+    </div>
+    <nav class="px-3 py-4 space-y-1 text-sm">
+      <a class="navlink active flex items-center gap-3 px-3 py-2 rounded-lg font-medium" href="#">Dashboard</a>
+      <a class="navlink flex items-center gap-3 px-3 py-2 rounded-lg hover:text-white" href="#">Strategies</a>
+      <a class="navlink flex items-center gap-3 px-3 py-2 rounded-lg hover:text-white" href="#">Positions</a>
+      <a class="navlink flex items-center gap-3 px-3 py-2 rounded-lg hover:text-white" href="#">Backtests</a>
+      <a class="navlink flex items-center gap-3 px-3 py-2 rounded-lg hover:text-white" href="#">Settings</a>
+    </nav>
+    <div class="mt-auto px-6 py-4 text-xs text-mute border-t border-edge">
+      Simulation mode · paper ledger
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 min-w-0">
+    <header class="flex items-center justify-between px-8 py-5 border-b border-[#eceef4] bg-white">
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight">Dashboard</h1>
+        <p class="text-sm text-mute">Strategy performance, simulated ledger</p>
+      </div>
+      <button id="runBtn" onclick="runSim()"
+        class="text-sm font-medium bg-ink text-white px-4 py-2 rounded-lg hover:bg-slate2 transition">
+        Run simulation
+      </button>
+    </header>
+
+    <section class="px-8 py-6">
+      <!-- Stat cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="cards"></div>
+
+      <!-- Trades table -->
+      <div class="card mt-6 overflow-hidden">
+        <div class="px-5 py-4 border-b border-[#f0f1f6] flex items-center justify-between">
+          <h2 class="font-semibold text-sm">Trades</h2>
+          <span class="text-xs text-mute" id="tradeCount"></span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="text-mute text-xs uppercase tracking-wide">
+              <tr class="text-left border-b border-[#f0f1f6]">
+                <th class="px-5 py-3 font-medium">Strategy</th>
+                <th class="px-5 py-3 font-medium">Symbol</th>
+                <th class="px-5 py-3 font-medium">Side</th>
+                <th class="px-5 py-3 font-medium text-right">Entry</th>
+                <th class="px-5 py-3 font-medium text-right">Exit</th>
+                <th class="px-5 py-3 font-medium text-right">P&L</th>
+                <th class="px-5 py-3 font-medium text-right">R</th>
+                <th class="px-5 py-3 font-medium">Outcome</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div id="empty" class="hidden px-5 py-12 text-center text-mute text-sm">
+          No trades yet. Click <span class="font-medium text-ink">Run simulation</span> to populate the ledger.
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const fmt = (n, d=2) => (n===null||n===undefined) ? '—' : Number(n).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+const money = n => (n===null||n===undefined) ? '—' : (n<0?'-$':'$') + fmt(Math.abs(n));
+
+function card(label, value, sub, tone) {
+  const color = tone==='up'?'text-up':tone==='down'?'text-down':'text-ink';
+  return `<div class="card p-5">
+    <div class="text-xs text-mute font-medium">${label}</div>
+    <div class="num text-2xl font-semibold mt-1 ${color}">${value}</div>
+    <div class="text-xs text-mute mt-1">${sub||''}</div>
+  </div>`;
+}
+
+async function load() {
+  const [stats, trades] = await Promise.all([
+    fetch('/api/stats').then(r=>r.json()),
+    fetch('/api/trades').then(r=>r.json()),
+  ]);
+
+  const pnlTone = stats.total_pnl > 0 ? 'up' : stats.total_pnl < 0 ? 'down' : '';
+  const expTone = stats.expectancy_r > 0 ? 'up' : stats.expectancy_r < 0 ? 'down' : '';
+  document.getElementById('cards').innerHTML =
+      card('Total P&L', money(stats.total_pnl), `${stats.total_trades} closed trades`, pnlTone)
+    + card('Win rate', stats.win_rate + '%', `${stats.wins}W / ${stats.losses}L`, '')
+    + card('Expectancy', fmt(stats.expectancy_r,3) + ' R', 'per trade', expTone)
+    + card('Profit factor', stats.profit_factor===null?'—':fmt(stats.profit_factor,2), 'gross win / gross loss', '');
+
+  const rows = document.getElementById('rows');
+  const empty = document.getElementById('empty');
+  document.getElementById('tradeCount').textContent = trades.length ? `${trades.length} shown` : '';
+
+  if (!trades.length) { rows.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  rows.innerHTML = trades.map(t => {
+    const pnlTone = (t.pnl??0) > 0 ? 'text-up' : (t.pnl??0) < 0 ? 'text-down' : 'text-mute';
+    const sideBadge = t.side==='long'
+      ? '<span class="text-xs font-medium px-2 py-0.5 rounded bg-green-50 text-up">long</span>'
+      : '<span class="text-xs font-medium px-2 py-0.5 rounded bg-red-50 text-down">short</span>';
+    const outcome = t.status==='open'
+      ? '<span class="text-xs px-2 py-0.5 rounded bg-blue-50 text-brand">open</span>'
+      : `<span class="text-xs text-mute capitalize">${t.exit_reason||'closed'}</span>`;
+    return `<tr class="border-b border-[#f5f6fa] hover:bg-[#fafbfd]">
+      <td class="px-5 py-3 text-mute">${t.strategy}</td>
+      <td class="px-5 py-3 font-medium">${t.symbol}</td>
+      <td class="px-5 py-3">${sideBadge}</td>
+      <td class="px-5 py-3 text-right num">${fmt(t.entry_price)}</td>
+      <td class="px-5 py-3 text-right num">${t.exit_price?fmt(t.exit_price):'—'}</td>
+      <td class="px-5 py-3 text-right num font-medium ${pnlTone}">${money(t.pnl)}</td>
+      <td class="px-5 py-3 text-right num ${pnlTone}">${t.pnl_r!=null?fmt(t.pnl_r,2):'—'}</td>
+      <td class="px-5 py-3">${outcome}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function runSim() {
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true; btn.textContent = 'Running…';
+  await fetch('/api/run-sim', {method:'POST'});
+  await load();
+  btn.disabled = false; btn.textContent = 'Run simulation';
+}
+
+load();
+</script>
+</body>
+</html>
