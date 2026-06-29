@@ -114,6 +114,56 @@ def stats() -> dict:
     }
 
 
+def stats_by_strategy() -> dict[str, dict]:
+    with cursor() as cur:
+        cur.execute("SELECT * FROM trades WHERE status='closed'")
+        closed = [dict(r) for r in cur.fetchall()]
+
+    if not closed:
+        return {}
+
+    by_strat = {}
+    for t in closed:
+        strat = t["strategy"]
+        if strat not in by_strat:
+            by_strat[strat] = []
+        by_strat[strat].append(t)
+
+    res = {}
+    for strat, trades in by_strat.items():
+        wins = [t for t in trades if (t["pnl"] or 0) > 0]
+        losses = [t for t in trades if (t["pnl"] or 0) <= 0]
+        gross_win = sum(t["pnl"] for t in wins) or 0.0
+        gross_loss = abs(sum(t["pnl"] for t in losses)) or 0.0
+        total_pnl = sum(t["pnl"] for t in trades)
+        avg_r = sum(t["pnl_r"] for t in trades) / len(trades)
+
+        cum_pnl = 0.0
+        equity_curve = []
+        # Sort trades by entry time to build chronological equity curve
+        trades_sorted = sorted(trades, key=lambda x: x["entry_time"])
+        for idx, tr in enumerate(trades_sorted):
+            cum_pnl += tr["pnl"]
+            equity_curve.append({
+                "index": idx + 1,
+                "pnl": round(cum_pnl, 2),
+                "time": tr["entry_time"]
+            })
+
+        res[strat] = {
+            "strategy": strat,
+            "total_trades": len(trades),
+            "wins": len(wins),
+            "losses": len(losses),
+            "win_rate": round(100 * len(wins) / len(trades), 1),
+            "total_pnl": round(total_pnl, 2),
+            "expectancy_r": round(avg_r, 3),
+            "profit_factor": round(gross_win / gross_loss, 2) if gross_loss else float("inf"),
+            "equity_curve": equity_curve
+        }
+    return res
+
+
 def reset():
     with cursor() as cur:
         cur.execute("DELETE FROM trades")

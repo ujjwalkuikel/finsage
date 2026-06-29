@@ -8,3 +8,9 @@ export async function getTrades(limit = 200) {
 export async function runSim() {
   const r = await fetch('/api/run-sim', { method: 'POST' }); return r.json()
 }
+export async function getStrategies() {
+  const r = await fetch('/api/strategies'); return r.json()
+}
+export async function validateStrategy(name) {
+  const r = await fetch(`/api/strategies/${name}/validate`, { method: 'POST' }); return r.json()
+}

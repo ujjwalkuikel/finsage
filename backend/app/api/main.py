@@ -67,6 +67,56 @@ def run_sim():
     return JSONResponse({"ok": True, "stats": db.stats()})
 
 
+@app.get("/api/strategies")
+def get_strategies():
+    return JSONResponse(db.stats_by_strategy())
+
+
+@app.post("/api/strategies/{name}/validate")
+def validate_strategy(name: str):
+    from app.engine.strategies.orb import OpeningRangeBreakout
+    from app.engine.strategies.pdh_pdl import PdhPdlStrategy
+    from app.engine.strategies.donchian import DonchianTurtle
+    from app.engine.strategies.rsi_connors import RsiConnors
+    from app.engine.strategies.vwap import VwapReversion
+    from app.engine.strategies.gap_fade import GapFade
+    from app.engine.strategy import RaynerTeoPullback
+    from app.engine.feed import MockIntradayFeed
+    from app.validation.gauntlet import validate
+
+    # Resolve strategy class instance
+    strat = None
+    if name == "opening_range_breakout":
+        strat = OpeningRangeBreakout()
+    elif name == "pdh_pdl_breakout":
+        strat = PdhPdlStrategy(mode="breakout")
+    elif name == "pdh_pdl_reversal":
+        strat = PdhPdlStrategy(mode="reversal")
+    elif name == "donchian_turtle":
+        strat = DonchianTurtle()
+    elif name == "rsi_connors":
+        strat = RsiConnors(trend_period=50)
+    elif name == "vwap_reversion":
+        strat = VwapReversion()
+    elif name == "gap_fade":
+        strat = GapFade(gap_pct=0.005)
+    elif name == "rayner_teo_pullback":
+        strat = RaynerTeoPullback()
+
+    if not strat:
+        return JSONResponse({"ok": False, "error": f"Strategy {name} not found"}, status_code=400)
+
+    # Run the validation gauntlet over mock intraday feed
+    feed = MockIntradayFeed(n_days=10, seed=42)
+    symbols = ["AMC", "BBAI", "SOFI", "PLTR", "RIOT", "MARA"]
+
+    try:
+        report = validate(strat, feed, symbols, warmup=55)
+        return JSONResponse({"ok": True, "report": report})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
 @app.get("/")
 def dashboard():
     return FileResponse(STATIC_DIR / "index.html")
