@@ -168,6 +168,143 @@ def query_memories(query: str, symbol: str = None):
     return JSONResponse({"ok": True, "results": results})
 
 
+@app.post("/api/agent/orchestrate")
+def agent_orchestrate_trade(request: AnalyzeRequest):
+    from app.orchestrator.graph import get_orchestrator
+    from app.agents.agent_execution import propose_and_execute_trade
+    from app.agents.tools import get_indicators
+    from app.agents.risk import RiskAgent
+    from app.core import config
+    
+    symbol = request.ticker.upper()
+    
+    # 1. Run core orchestrator (Macro -> News -> Technical -> Thesis)
+    orchestrator = get_orchestrator()
+    state = orchestrator.orchestrate(symbol, proposed_trade=None)
+    
+    if state.get("status") == "error":
+        return JSONResponse(state, status_code=500)
+        
+    thesis_result = state.get("thesis", {})
+    verdict = thesis_result.get("verdict", "neutral").lower()
+    
+    trade_execution = {"status": "skipped", "message": "Thesis was neutral/skipped. No trade proposed."}
+    
+    # 2. If thesis recommends trade (buy or sell), construct proposal and audit with RiskAgent
+    if verdict in ("buy", "sell"):
+        inds_data = get_indicators(symbol)
+        if "error" not in inds_data:
+            latest_price = inds_data["latest_price"]
+            atr = inds_data["indicators"]["atr14"]
+            if atr is None or atr <= 0.0:
+                atr = latest_price * 0.02
+            
+            per_share_risk = 2.0 * atr
+            qty = round((config.ACCOUNT_SIZE * config.RISK_PCT_PER_TRADE) / per_share_risk, 2)
+            
+            proposed_trade = {
+                "entry": latest_price,
+                "stop": latest_price - per_share_risk if verdict == "buy" else latest_price + per_share_risk,
+                "qty": qty,
+                "side": "long" if verdict == "buy" else "short"
+            }
+            
+            # Audit trade via RiskAgent
+            risk_agent = RiskAgent()
+            risk_result = risk_agent.run({"symbol": symbol, "proposed_trade": proposed_trade})
+            state["risk_analysis"] = risk_result
+            
+            # Execute trade if approved
+            trade_execution = propose_and_execute_trade(symbol, thesis_result, risk_result)
+        else:
+            trade_execution = {"status": "error", "message": f"Failed to fetch prices for proposal: {inds_data['error']}"}
+    else:
+        state["risk_analysis"] = {"veto": False, "reason": "No trade proposed."}
+        
+    state["trade_execution"] = trade_execution
+    return JSONResponse(state)
+
+
+@app.get("/api/agent/positions")
+def get_agent_positions():
+    from app.agents.tools import get_indicators
+    
+    trades = db.all_trades(limit=200)
+    open_trades = [t for t in trades if t["status"] == "open" and t["strategy"] == "agent_copilot"]
+    
+    results = []
+    for pos in open_trades:
+        symbol = pos["symbol"]
+        inds_data = get_indicators(symbol)
+        
+        latest_price = pos["entry_price"]
+        pnl_pct = 0.0
+        
+        if "error" not in inds_data:
+            latest_price = inds_data["latest_price"]
+            entry = pos["entry_price"]
+            if pos["side"] == "long":
+                pnl_pct = ((latest_price - entry) / entry) * 100
+            else:
+                pnl_pct = ((entry - latest_price) / entry) * 100
+                
+        results.append({
+            "id": pos["id"],
+            "strategy": pos["strategy"],
+            "symbol": symbol,
+            "side": pos["side"],
+            "qty": pos["qty"],
+            "entry_price": pos["entry_price"],
+            "latest_price": round(latest_price, 2),
+            "pnl_pct": round(pnl_pct, 2),
+            "stop_price": pos["stop_price"],
+            "target_price": pos["target_price"],
+            "entry_time": pos["entry_time"]
+        })
+        
+    return JSONResponse(results)
+
+
+@app.post("/api/agent/positions/{id}/close")
+def close_agent_position(id: int):
+    from app.agents.tools import get_indicators
+    
+    trades = db.all_trades(limit=200)
+    pos = None
+    for t in trades:
+        if t["id"] == id and t["status"] == "open":
+            pos = t
+            break
+            
+    if not pos:
+        return JSONResponse({"ok": False, "error": f"Open position with ID {id} not found"}, status_code=400)
+        
+    symbol = pos["symbol"]
+    inds_data = get_indicators(symbol)
+    if "error" in inds_data:
+        return JSONResponse({"ok": False, "error": f"Failed to get current price for closing: {inds_data['error']}"}, status_code=500)
+        
+    exit_px = inds_data["latest_price"]
+    exit_time = inds_data["time"]
+    
+    # Calculate P&L
+    entry = pos["entry_price"]
+    qty = pos["qty"]
+    
+    if pos["side"] == "long":
+        pnl = (exit_px - entry) * qty
+    else:
+        pnl = (entry - exit_px) * qty
+        
+    # Calculate R-multiple
+    risk_per_share = abs(entry - pos["stop_price"])
+    pnl_r = pnl / (risk_per_share * qty) if risk_per_share > 0 else 0.0
+    
+    db.close_trade(id, exit_time, round(exit_px, 2), round(pnl, 2), round(pnl_r, 3), "manual_exit")
+    
+    return JSONResponse({"ok": True, "message": f"Closed position {symbol} at ${round(exit_px, 2)} with P&L of ${round(pnl, 2)}"})
+
+
 @app.get("/")
 def dashboard():
 

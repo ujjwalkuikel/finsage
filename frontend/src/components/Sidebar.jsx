@@ -1,8 +1,9 @@
-import { LayoutDashboard, FlaskConical, LineChart } from 'lucide-react'
+import { LayoutDashboard, FlaskConical, LineChart, Bot } from 'lucide-react'
 
 const items = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
   { id: 'strategies', icon: LineChart, label: 'Strategies comparison' },
+  { id: 'agent_terminal', icon: Bot, label: 'Agent Terminal' },
   { id: 'trades', icon: FlaskConical, label: 'Trades ledger' },
 ]
 

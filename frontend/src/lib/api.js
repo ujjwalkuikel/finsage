@@ -14,3 +14,23 @@ export async function getStrategies() {
 export async function validateStrategy(name) {
   const r = await fetch(`/api/strategies/${name}/validate`, { method: 'POST' }); return r.json()
 }
+
+export async function orchestrateTrade(ticker) {
+  const r = await fetch('/api/agent/orchestrate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ticker })
+  });
+  return r.json();
+}
+
+export async function getAgentPositions() {
+  const r = await fetch('/api/agent/positions');
+  return r.json();
+}
+
+export async function closeAgentPosition(id) {
+  const r = await fetch(`/api/agent/positions/${id}/close`, { method: 'POST' });
+  return r.json();
+}
+

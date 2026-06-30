@@ -4,7 +4,9 @@ import StatCard from './components/StatCard'
 import TradesTable from './components/TradesTable'
 import StrategiesTable from './components/StrategiesTable'
 import ValidationModal from './components/ValidationModal'
+import AgentTerminal from './components/AgentTerminal'
 import { getStats, getTrades, getStrategies, runSim } from './lib/api'
+
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -56,13 +58,15 @@ export default function App() {
         <header className="flex items-center justify-between px-8 py-5 border-b border-neutral-200 bg-white">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-neutral-900 capitalize">
-              {activeTab === 'dashboard' ? 'Overview' : activeTab === 'strategies' ? 'Strategies Comparison' : 'Trades Ledger'}
+              {activeTab === 'dashboard' ? 'Overview' : activeTab === 'strategies' ? 'Strategies Comparison' : activeTab === 'agent_terminal' ? 'Agent Terminal' : 'Trades Ledger'}
             </h1>
             <p className="text-xs text-neutral-400 font-mono mt-1 uppercase tracking-wider font-semibold">
               {activeTab === 'dashboard' 
                 ? 'Consolidated simulated account performance metrics' 
                 : activeTab === 'strategies' 
                 ? 'Compare expectancies and run validation gauntlets' 
+                : activeTab === 'agent_terminal'
+                ? 'Interactive multi-agent decision log and position monitor'
                 : 'Raw trade logs from SQLite db'}
             </p>
           </div>
@@ -121,6 +125,10 @@ export default function App() {
               strategies={strategies} 
               onValidate={(name) => setSelectedStrategy(name)} 
             />
+          )}
+
+          {activeTab === 'agent_terminal' && (
+            <AgentTerminal />
           )}
 
           {activeTab === 'trades' && (
