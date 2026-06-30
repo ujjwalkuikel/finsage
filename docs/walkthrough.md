@@ -1,6 +1,6 @@
-# Walkthrough — Phase 0, Phase 2, & Phase 3 Complete
+# Walkthrough — Phases 0 to 6 Complete
 
-This document outlines the changes made during the initial development phases of FinSage: setting up the repository (Phase 0), implementing the **Validation Gauntlet** and **Strategies** (Phase 2), and building the **Swappable Data Feed Architecture & React Frontend Dashboard** (Phase 3: T3.1 to T3.10).
+This document outlines the implementation details and verification results for the development phases of FinSage (AII Platform). FinSage marries deterministic quantitative execution with agentic LLM reasoning.
 
 ---
 
@@ -32,56 +32,78 @@ This document outlines the changes made during the initial development phases of
 ## Part 3: Phase 3 — Data Feeds & Swappable Providers (T3.1 to T3.6)
 
 We implemented a highly decoupled, swappable data adapter architecture:
-
-### Key Implementation Details
-
-#### 1. Decoupled Provider Interface (`provider.py`) — T3.1
-- Created the abstract base `provider.py` defining a uniform `DataProvider` interface.
-- Built **`PolygonProvider`** which fetches historical aggregates from `api.polygon.io` (Massive.com), manages next-link pagination for dense intraday bars, parses timestamps into New York time, and automatically sleeps/retries on HTTP 429 rate limit triggers.
-- Switching to another provider (e.g. Tiingo) in the future only requires implementing the `DataProvider` interface; the rest of the application remains unchanged.
-
-#### 2. CSV Cache Layer (`polygon_feed.py`) — T3.2 & T3.3
-- Implemented file-based caching inside `polygon_feed.py`.
-- Requests check for a local CSV file inside `backend/data_cache/` matching the symbol/dates.
-- **Cache Hit**: loads and streams from disk directly, avoiding network calls.
-- **Cache Miss**: queries the provider, saves the result to a CSV file on disk, and streams.
-
-#### 3. Real-Time streaming Feed (`tradier_feed.py`) — T3.5
-- Built a WebSocket-based real-time consolidated client in `tradier_feed.py` using the `websockets` library.
-- Performs session authentication, establishes a WebSocket connection, and streams tick event trades.
-- Aggregates real-time ticks on-the-fly and yields 1-minute `Bar` objects synchronously to the engine.
-
-#### 4. Watchlist Universe screen (`universe.py`) — T3.6
-- Built `universe.py` holding a default watchlist of 20 liquid tickers across multiple market sectors (megacaps, defensive, energy, healthcare, and financials) and a stub for EOD scanner logic.
+1. **Decoupled Provider Interface (`provider.py`)**: Created the abstract base defining a uniform `DataProvider` interface. Built `PolygonProvider` using standard library `urllib` with automatic sleep/retry on 429 rate limit triggers.
+2. **CSV Cache Layer (`polygon_feed.py`)**: Requests check for a local CSV file inside `backend/data_cache/` matching the symbol/dates. Hits stream from disk; misses pull from Polygon and write to cache.
+3. **Real-Time streaming Feed (`tradier_feed.py`)**: Built a WebSocket-based real-time consolidated client using `websockets` to stream tick event trades and yield 1-minute bars.
+4. **Watchlist Universe screen (`universe.py`)**: Created a default watchlist of 20 liquid tickers across multiple market sectors.
 
 ---
 
 ## Part 4: Phase 3 — React Frontend Dashboard (T3.7 to T3.10)
 
-We built an interactive, premium React dashboard on Vite, communicating with the FastAPI backend:
-
-### Key Implementation Details
-
-#### 1. Page Shell & Tabs switching (`App.jsx`, `Sidebar.jsx`) — T3.7
-- Refactored `Sidebar.jsx` and `App.jsx` to coordinate tab selection between **Overview**, **Strategies & Charts**, and **Trades Ledger**.
-- Added dynamic title/description states and integrated the simulation run button to refresh all strategy metrics in real time.
-
-#### 2. Custom SVG Equity Curve (`EquityChart.jsx`) — T3.8
-- Created a custom vector-based charting component in `EquityChart.jsx` that scales cumulative P&L coordinates to fit custom width/height values.
-- Renders a clean line path (green for profitable, red for losing) with a soft faded gradient under the curve, giving a premium visual presentation.
-
-#### 3. Strategy Comparison Grid (`StrategiesTable.jsx`) — T3.9
-- Groups trading stats per strategy from the SQLite database.
-- Displays metrics side-by-side (Total Trades, Win Rate, Expectancy, Profit Factor, Total P&L) alongside a mini-equity curve visual thumbnail and a "Validate" trigger.
-
-#### 4. Validation Gauntlet modal (`ValidationModal.jsx`) — T3.10
-- Triggers the validation endpoint `POST /api/strategies/{name}/validate` running Monte Carlo tests.
-- Renders loading stages, verdict status, smell-test alerts (warnings count, win rate, profit factor), and p-values.
+Built an interactive, premium React dashboard on Vite:
+1. **Page Shell & Tabs switching (`Sidebar.jsx`, `App.jsx`)**: Coordinates tab selection between **Overview**, **Strategies & Charts**, and **Trades Ledger**.
+2. **Custom SVG Equity Curve (`EquityChart.jsx`)**: Renders a clean vector-based line path with a soft faded gradient under the curve.
+3. **Strategy Comparison Grid (`StrategiesTable.jsx`)**: Displays expectancy, profit factor, win rate, and total P&L alongside validation status.
+4. **Validation Gauntlet modal (`ValidationModal.jsx`)**: Triggers the validation endpoint `POST /api/strategies/{name}/validate` running Monte Carlo tests.
 
 ---
 
-## Verification & Test Results
+## Part 5: Phase 4 — First Agent (Analysis Only)
 
-We created a suite of validation tests under `test_validation.py`, `test_orb.py`, `test_strategies.py`, and `test_data.py`. All 19 tests pass cleanly in `0.47s`.
+Marries the backtesting and indicator engine with LLM-based reasoning via the **Technical/Research Agent** (no execution, maintaining safety).
+1. **LLM Client Wrapper (`llm.py`)**: Refactored to inherit from `BaseLLMClient` with a factory. Integrates Gemini (`gemini-2.5-flash`), Groq (`llama3-70b-8192`), and Cerebras (`llama3.1-70b`) with JSON mode.
+2. **Engine-as-Tools (`tools.py`)**: Exposes deterministic indicators (`get_indicators`) and backtests (`run_backtest`) to the LLM agent layer.
+3. **TechnicalAgent (`technical.py`)**: Gathers metrics, prompts the LLM to interpret, and outputs a structured JSON report.
+4. **FastAPI Route & Telegram Bot (`main.py`, `telegram_bot.py`)**: Exposes `POST /api/analyze` and registers a Telegram bot poller (`run_bot.py`) responding to tickers with formatted analyses.
 
-The React application compiles and builds successfully for production via `npm run build` in `39.35s` with zero errors.
+---
+
+## Part 6: Phase 5 — Memory, Orchestrator, & Multi-Agent Team
+
+Built a modular, swappable ecosystem that scales from single-agent lookup to multi-specialist investment team consensus.
+1. **SQLite Vector Store (`memory.py`)**: Implements `SQLiteVectorStore` (`memories.db`). Calls Gemini's REST API (`text-embedding-004`) to generate 768-dimension vectors and computes cosine similarity in pure Python (zero local ML packages).
+2. **Specialist Analyst Team**:
+   - `NewsAgent` (`news.py`): Finnhub company news retrieval and catalyst sentiment scoring.
+   - `PortfolioAgent` (`portfolio.py`): Scans sqlite ledger to calculate exposure concentrations.
+   - `MacroAgent` (`macro.py`): Yield curves and volatility regime detection.
+   - `RiskAgent` (`risk.py`): Enforces deterministic max 1% trade risk and 25% concentration vetos.
+   - `ThesisAgent` & `ReflectionAgent` (`thesis.py`): Synthesizes thesis logs, saves records in memory, and grades historical closed trades against outcomes.
+3. **Swappable Orchestrators**:
+   - `PythonOrchestrator` (`python_router.py`): Pure-Python state machine router for simple local debugging.
+   - `LangGraphOrchestrator` (`graph.py`): Compiles state nodes into an executable graph using the `langgraph` framework, with auto-fallback to PythonOrchestrator if missing.
+
+---
+
+## Part 7: Phase 6 — Agentic & Algorithmic Execution
+
+Enables agentic strategy routing, executing trades in the ledger with ATR-based stops and targets, and tracking active position gains/losses.
+1. **Backend Execution (`agent_execution.py`)**: If the investment thesis returns a `buy` or `sell` verdict, and the `RiskAgent` approves (no veto), it fetches the latest price, sets ATR-based stop/target boundaries, calculates quantities, and writes the position to SQLite under `strategy="agent_copilot"`.
+2. **FastAPI Endpoints (`main.py`)**:
+   - `POST /api/agent/orchestrate`: Runs orchestrator, proposes/executes approved trades.
+   - `GET /api/agent/positions`: Fetches open agent positions and computes live **`% P&L`** metrics.
+   - `POST /api/agent/positions/{id}/close`: Handles manual exit updates in the ledger.
+3. **Sidebar & Routing (`Sidebar.jsx`, `App.jsx`, `api.js`)**: Adds the new **Agent Terminal** sidebar option and routes API client queries.
+4. **Agent Terminal Dashboard (`AgentTerminal.jsx`)**:
+   - **Agent Console (Left)**: Terminal log screen printing formatted, color-coded step-by-step logs dynamically (Macro regime -> News sentiment -> Technical analysis -> Thesis synthesis -> Risk review).
+   - **Active Positions (Right)**: List querying `% P&L` changes every 5 seconds, with a manual exit close button.
+
+---
+
+## Part 8: Verification Results
+
+### Unit Tests
+All 29 unit tests pass cleanly:
+```powershell
+tests\test_agent.py ....                                                 [ 13%]
+tests\test_agent_execution.py ..                                         [ 20%]
+tests\test_data.py .                                                     [ 24%]
+tests\test_memory.py ..                                                  [ 31%]
+tests\test_orb.py ..                                                     [ 37%]
+tests\test_orchestrator.py ..                                            [ 44%]
+tests\test_smoke.py .                                                    [ 48%]
+tests\test_strategies.py ......                                          [ 68%]
+tests\test_validation.py .........                                       [100%]
+
+============================= 29 passed in 0.50s ==============================
+```
