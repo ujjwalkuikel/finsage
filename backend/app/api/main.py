@@ -13,10 +13,19 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from app.engine import db
 
+class AnalyzeRequest(BaseModel):
+    ticker: str
+
+class OrchestrateRequest(BaseModel):
+    ticker: str
+    proposed_trade: dict = None
+
 app = FastAPI(title="AII Platform")
+
 
 STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static"
 
@@ -24,6 +33,11 @@ STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static"
 @app.on_event("startup")
 def _startup():
     db.init_db()
+    # Start Telegram bot polling in a background thread automatically
+    from app.agents.telegram_bot import run_polling_bot
+    import threading
+    threading.Thread(target=run_polling_bot, daemon=True).start()
+
 
 
 @app.get("/api/stats")
@@ -117,8 +131,47 @@ def validate_strategy(name: str):
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 
+@app.post("/api/analyze")
+def analyze_ticker(request: AnalyzeRequest):
+    from app.agents.technical import TechnicalAgent
+    
+    agent = TechnicalAgent()
+    result = agent.run({"ticker": request.ticker})
+    
+    if "error" in result:
+        return JSONResponse(result, status_code=400)
+    return JSONResponse(result)
+
+
+@app.post("/api/orchestrate")
+def orchestrate_analysis(request: OrchestrateRequest):
+    from app.orchestrator.graph import get_orchestrator
+    
+    orchestrator = get_orchestrator()
+    result = orchestrator.orchestrate(request.ticker, request.proposed_trade)
+    
+    if result.get("status") == "error":
+        return JSONResponse(result, status_code=500)
+    return JSONResponse(result)
+
+
+@app.get("/api/memories")
+def query_memories(query: str, symbol: str = None):
+    from app.core.memory import get_vector_store
+    
+    store = get_vector_store()
+    filter_metadata = {}
+    if symbol:
+        filter_metadata["symbol"] = symbol.upper()
+        
+    results = store.query(query, filter_metadata=filter_metadata, limit=10)
+    return JSONResponse({"ok": True, "results": results})
+
+
 @app.get("/")
 def dashboard():
+
+
     return FileResponse(STATIC_DIR / "index.html")
 
 

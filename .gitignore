@@ -9,6 +9,8 @@ venv/
 # Databases
 *.db
 backend/trades.db
+backend/data_cache/
+
 
 # Frontend
 frontend/node_modules/

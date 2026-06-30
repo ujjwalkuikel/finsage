@@ -1,6 +1,10 @@
 fastapi>=0.110
 uvicorn[standard]>=0.29
 pytest>=8.0.0
+httpx>=0.27.0
+tzdata
 # The core engine (app/strategy.py, execution.py, feed.py, engine.py, db.py)
 # uses ONLY the Python standard library, so `python run_sim.py` works with no
 # installs. FastAPI + uvicorn are only needed to serve the dashboard.
+
+

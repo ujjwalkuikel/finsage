@@ -112,36 +112,38 @@ you always know what's going on. This is the single place to track progress.
 
 ## Phase 4 — First agent (analysis only, no execution)
 
-- [ ] **T4.1** — LLM client wrapper (Groq/Cerebras) reading key from config.
+- [x] **T4.1** — LLM client wrapper (Groq/Cerebras) reading key from config.
   *Done when:* a test prompt returns a completion.
-- [ ] **T4.2** — Engine-as-tools: expose "get indicators for symbol" and "run
+- [x] **T4.2** — Engine-as-tools: expose "get indicators for symbol" and "run
   backtest" as callable tools. *Done when:* a function returns real numbers.
-- [ ] **T4.3** — `TechnicalAgent.run()`: call tools → LLM interprets → structured
+- [x] **T4.3** — `TechnicalAgent.run()`: call tools → LLM interprets → structured
   result (conclusion + evidence + inputs used). *Done when:* a ticker returns an
   evidence-backed analysis. **No execution.**
-- [ ] **T4.4** — API endpoint `POST /api/analyze {ticker}`. *Done when:* curl
+- [x] **T4.4** — API endpoint `POST /api/analyze {ticker}`. *Done when:* curl
   returns the analysis JSON.
-- [ ] **T4.5** — Telegram bot: receive a ticker, call `/api/analyze`, reply.
+- [x] **T4.5** — Telegram bot: receive a ticker, call `/api/analyze`, reply.
   *Done when:* you DM a ticker and get the analysis back.
-- [ ] **T4.6** — Explainability check: every analysis lists which indicators/data
+- [x] **T4.6** — Explainability check: every analysis lists which indicators/data
   it used. *Done when:* no "black box" outputs.
+
 
 ---
 
 ## Phase 5 — Memory + more agents + orchestrator
 
-- [ ] **T5.1** — Vector DB setup (Chroma/pgvector) + an `add`/`query` wrapper.
-- [ ] **T5.2** — Store every analysis + decision as a memory record (with metadata).
-- [ ] **T5.3** — RAG retrieval: "why did we look at X before?" returns past records.
-- [ ] **T5.4** — `PortfolioAgent`: reads holdings, reports concentration/sector exposure.
-- [ ] **T5.5** — `NewsAgent`: Finnhub news → LLM catalyst classification → tag.
-- [ ] **T5.6** — `MacroAgent`: pulls a few macro signals, labels the regime.
-- [ ] **T5.7** — `RiskAgent` (reads deterministic limits, can flag/veto — never sets them).
-- [ ] **T5.8** — `ThesisAgent`: store the "why" of a position; later check if it holds.
-- [ ] **T5.9** — `ReflectionAgent`: grade past predictions against outcomes.
-- [ ] **T5.10** — LangGraph orchestrator: wire agents into a graph + a synthesis node.
-- [ ] **T5.11** — Synthesis output is explainable (which agent contributed what).
-- [ ] **T5.12** — Knowledge endpoints: ask the system about its own past.
+- [x] **T5.1** — Vector DB setup (Chroma/pgvector) + an `add`/`query` wrapper.
+- [x] **T5.2** — Store every analysis + decision as a memory record (with metadata).
+- [x] **T5.3** — RAG retrieval: "why did we look at X before?" returns past records.
+- [x] **T5.4** — `PortfolioAgent`: reads holdings, reports concentration/sector exposure.
+- [x] **T5.5** — `NewsAgent`: Finnhub news → LLM catalyst classification → tag.
+- [x] **T5.6** — `MacroAgent`: pulls a few macro signals, labels the regime.
+- [x] **T5.7** — `RiskAgent` (reads deterministic limits, can flag/veto — never sets them).
+- [x] **T5.8** — `ThesisAgent`: store the "why" of a position; later check if it holds.
+- [x] **T5.9** — `ReflectionAgent`: grade past predictions against outcomes.
+- [x] **T5.10** — LangGraph orchestrator: wire agents into a graph + a synthesis node.
+- [x] **T5.11** — Synthesis output is explainable (which agent contributed what).
+- [x] **T5.12** — Knowledge endpoints: ask the system about its own past.
+
 
 ---
 
