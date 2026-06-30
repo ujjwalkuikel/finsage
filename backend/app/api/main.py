@@ -24,6 +24,20 @@ class OrchestrateRequest(BaseModel):
     ticker: str
     proposed_trade: dict = None
 
+class MCPConnectRequest(BaseModel):
+    name: str
+    url: str
+    token: str = None
+
+class MCPDisconnectRequest(BaseModel):
+    name: str
+
+class MCPExecuteRequest(BaseModel):
+    server_name: str
+    tool_name: str
+    arguments: dict
+
+
 app = FastAPI(title="AII Platform")
 
 
@@ -303,6 +317,59 @@ def close_agent_position(id: int):
     db.close_trade(id, exit_time, round(exit_px, 2), round(pnl, 2), round(pnl_r, 3), "manual_exit")
     
     return JSONResponse({"ok": True, "message": f"Closed position {symbol} at ${round(exit_px, 2)} with P&L of ${round(pnl, 2)}"})
+
+
+@app.post("/api/mcp/connect")
+async def mcp_connect(request: MCPConnectRequest):
+    from app.core.mcp_client import mcp_manager
+    
+    headers = {}
+    if request.token:
+        headers["Authorization"] = f"Bearer {request.token}"
+        
+    ok = await mcp_manager.connect_sse(
+        name=request.name,
+        url=request.url,
+        headers=headers if request.token else None
+    )
+    
+    if not ok:
+        return JSONResponse({"ok": False, "error": f"Failed to connect to MCP server '{request.name}'"}, status_code=500)
+    return JSONResponse({"ok": True, "message": f"Connected to MCP server '{request.name}'"})
+
+
+@app.post("/api/mcp/disconnect")
+async def mcp_disconnect(request: MCPDisconnectRequest):
+    from app.core.mcp_client import mcp_manager
+    await mcp_manager.disconnect(request.name)
+    return JSONResponse({"ok": True, "message": f"Disconnected MCP server '{request.name}'"})
+
+
+@app.get("/api/mcp/connections")
+def mcp_connections():
+    from app.core.mcp_client import mcp_manager
+    active = [name for name, conn in mcp_manager.connections.items() if conn.is_connected]
+    return JSONResponse({"ok": True, "connections": active})
+
+
+@app.get("/api/mcp/tools")
+async def mcp_tools(name: str = None):
+    from app.core.mcp_client import mcp_manager
+    tools_dict = await mcp_manager.list_tools(name)
+    return JSONResponse({"ok": True, "tools": tools_dict})
+
+
+@app.post("/api/mcp/execute")
+async def mcp_execute(request: MCPExecuteRequest):
+    from app.core.mcp_client import mcp_manager
+    res = await mcp_manager.execute_tool(
+        server_name=request.server_name,
+        tool_name=request.tool_name,
+        arguments=request.arguments
+    )
+    if "error" in res:
+        return JSONResponse(res, status_code=500)
+    return JSONResponse(res)
 
 
 @app.get("/")
